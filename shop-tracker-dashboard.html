@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Shop Tracker Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0f0f0f;--ink2:#3a3a3a;--ink3:#6b6b6b;
+  --bg:#f7f5f0;--surface:#ffffff;--border:#e0ddd6;--border2:#ccc9c0;
+  --green:#1a7a4a;--green-lt:#edf7f1;
+  --red:#b93232;--red-lt:#fdf2f2;
+  --amber:#b06000;--amber-lt:#fff8ed;
+  --blue:#1a4fa0;--blue-lt:#eef3fc;
+  --accent:#2a5f3f;--accent2:#4a8c63;
+  --r:10px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6;min-height:100vh}
+header{background:var(--accent);color:#fff;padding:1.1rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem}
+header h1{font-family:'DM Serif Display',serif;font-size:1.4rem;font-weight:400;display:flex;align-items:center;gap:.5rem}
+header p{font-size:12px;opacity:.75;margin-top:2px}
+.tab-nav{display:flex;gap:.3rem;flex-wrap:wrap}
+.tab-btn{padding:.45rem 1.1rem;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;transition:background .15s;font-family:inherit}
+.tab-btn.active,.tab-btn:hover{background:rgba(255,255,255,.25)}
+#syncBar{background:#1a3d28;color:#fff;padding:.5rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;font-size:12px}
+.sync-status{display:flex;align-items:center;gap:.5rem}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#6b6b6b;flex-shrink:0;transition:background .3s}
+.sync-dot.ok{background:#4caf50}
+.sync-dot.err{background:#f44336}
+.sync-dot.syncing{background:#ff9800;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.container{max-width:1300px;margin:0 auto;padding:1.5rem}
+.section{display:none}.section.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.card-sm{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.2rem;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1rem;margin-bottom:1.5rem}
+.scard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.1rem 1.25rem}
+.scard-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-bottom:.3rem}
+.scard-value{font-size:1.45rem;font-weight:600;font-family:'DM Serif Display',serif}
+.scard-value.green{color:var(--green)}.scard-value.red{color:var(--red)}.scard-value.amber{color:var(--amber)}.scard-value.blue{color:var(--blue)}
+.scard-sub{font-size:11px;color:var(--ink3);margin-top:.2rem}
+.form-card{margin-bottom:1.25rem}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.7rem}
+.form-group{display:flex;flex-direction:column;gap:.3rem}
+.form-group label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3)}
+input,select{border:1px solid var(--border2);border-radius:7px;padding:.5rem .75rem;font-size:13px;font-family:inherit;color:var(--ink);background:#fff;width:100%;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus{outline:none;border-color:var(--accent2);box-shadow:0 0 0 3px rgba(74,140,99,.12)}
+.form-footer{display:flex;gap:.5rem;justify-content:flex-end;margin-top:.9rem;padding-top:.9rem;border-top:1px solid var(--border);flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:.35rem;padding:.5rem 1rem;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s,transform .1s;border:1px solid transparent;font-family:inherit}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent2)}
+.btn-outline{background:transparent;border-color:var(--border2);color:var(--ink)}.btn-outline:hover{background:var(--bg)}
+.btn-danger{background:transparent;border-color:var(--red);color:var(--red)}.btn-danger:hover{background:var(--red-lt)}
+.btn-google{background:#4285f4;color:#fff;border:none}.btn-google:hover{background:#3367d6}
+.btn-sm{padding:.3rem .6rem;font-size:11px;border-radius:6px}
+.table-toolbar{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1.25rem;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:.6rem}
+.table-toolbar h2{font-size:.95rem;font-weight:600}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:#fafaf8}
+th{text-align:left;padding:.65rem 1rem;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+th:hover{color:var(--accent)}
+td{padding:.7rem 1rem;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafaf8}
+.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:500}
+.muted{color:var(--ink3)}
+.badge{display:inline-block;padding:.18rem .6rem;border-radius:99px;font-size:11px;font-weight:600}
+.badge-paid{background:var(--green-lt);color:var(--green)}
+.badge-unpaid{background:var(--amber-lt);color:var(--amber)}
+.badge-overdue{background:var(--red-lt);color:var(--red)}
+.profit-highlight{background:linear-gradient(135deg,var(--green-lt),#fff);border:1px solid #a8d5b8;border-radius:var(--r);padding:1.1rem 1.4rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem}
+.mini-bars{display:flex;align-items:flex-end;gap:4px;height:80px;padding:0 0 4px}
+.mini-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.mini-bar{width:100%;border-radius:3px 3px 0 0;min-height:2px}
+.mini-bar-label{font-size:9px;color:var(--ink3)}
+.month-summary-table{width:100%;border-collapse:collapse;font-size:13px}
+.month-summary-table th{text-align:left;padding:.6rem .9rem;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);border-bottom:1px solid var(--border);background:#fafaf8}
+.month-summary-table td{padding:.65rem .9rem;border-bottom:1px solid var(--border)}
+.month-summary-table tr:last-child td{border-bottom:none}
+.month-summary-table tr:hover td{background:#fafaf8}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--r);padding:1.5rem;width:100%;max-width:460px}
+.modal h2{font-size:1rem;font-weight:600;margin-bottom:.9rem}
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1a1a1a;color:#fff;padding:.6rem 1rem;border-radius:8px;font-size:13px;opacity:0;transform:translateY(6px);transition:opacity .25s,transform .25s;z-index:9999;pointer-events:none;max-width:320px}
+#toast.show{opacity:1;transform:translateY(0)}
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--ink3)}
+.empty .icon{font-size:2.5rem;margin-bottom:.5rem}
+@media(max-width:640px){header{padding:.8rem 1rem}.container{padding:1rem}.summary-grid{grid-template-columns:1fr 1fr}#syncBar{padding:.5rem 1rem}}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🏪 Shop Tracker Dashboard</h1>
+    <p>Daily sales &middot; Monthly profit &middot; Invoices &middot; Google Sheets sync</p>
+  </div>
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('sales',this)">📈 Sales</button>
+    <button class="tab-btn" onclick="switchTab('invoices',this)">🧾 Invoices</button>
+  </div>
+</header>
+
+<!-- GOOGLE SYNC BAR -->
+<div id="syncBar">
+  <div class="sync-status">
+    <div class="sync-dot" id="syncDot"></div>
+    <span id="syncMsg">Not signed in — click Sign In to sync with Google Sheets</span>
+  </div>
+  <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+    <span id="lastSyncTime" style="opacity:.6;font-size:11px"></span>
+    <button class="btn btn-google btn-sm" id="signInBtn" onclick="signIn()">🔐 Sign in with Google</button>
+    <button class="btn btn-sm" id="signOutBtn" style="display:none;color:#fff;border:1px solid rgba(255,255,255,.3);background:transparent" onclick="signOut()">Sign out</button>
+    <button class="btn btn-sm" id="pullBtn" style="display:none;color:#fff;border:1px solid rgba(255,255,255,.3);background:transparent" onclick="pullFromSheets()">⬇ Pull</button>
+    <button class="btn btn-sm" id="pushBtn" style="display:none;color:#fff;border:1px solid rgba(255,255,255,.3);background:transparent" onclick="pushToSheets()">⬆ Push</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════ SALES SECTION ══════════ -->
+<div class="section active" id="sec-sales">
+
+  <div class="summary-grid">
+    <div class="scard"><div class="scard-label">This Month Sales</div><div class="scard-value blue" id="sc-monthSales">£0.00</div><div class="scard-sub" id="sc-monthName">—</div></div>
+    <div class="scard"><div class="scard-label">Profit (30%)</div><div class="scard-value green" id="sc-profit">£0.00</div><div class="scard-sub">30% of monthly sales</div></div>
+    <div class="scard"><div class="scard-label">Total Salaries</div><div class="scard-value red" id="sc-salary">£0.00</div><div class="scard-sub">This month</div></div>
+    <div class="scard"><div class="scard-label">Net After Salary</div><div class="scard-value amber" id="sc-net">£0.00</div><div class="scard-sub">Profit − Salaries</div></div>
+  </div>
+
+  <div class="card form-card">
+    <h2 style="font-size:.95rem;font-weight:600;margin-bottom:.9rem">➕ Add Daily Sale</h2>
+    <div class="form-grid">
+      <div class="form-group"><label>Date</label><input type="date" id="saleDate"/></div>
+      <div class="form-group"><label>Daily Sales Amount (£)</label><input type="number" id="saleAmount" placeholder="0.00" min="0" step="0.01"/></div>
+      <div class="form-group"><label>Note (optional)</label><input type="text" id="saleNote" placeholder="e.g. Bank holiday…"/></div>
+    </div>
+    <div class="form-footer"><button class="btn btn-primary" onclick="addSale()">Save Sale</button></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem">
+    <div class="card-sm">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);margin-bottom:.6rem">View Month</div>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <input type="month" id="viewMonth" style="flex:1" onchange="renderSalesSection()"/>
+        <button class="btn btn-outline btn-sm" onclick="goToCurrentMonth()">Today</button>
+      </div>
+    </div>
+    <div class="card-sm">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);margin-bottom:.4rem">Last 6 Months</div>
+      <div class="mini-bars" id="salesMiniBar"><div style="font-size:11px;color:var(--ink3)">No data yet</div></div>
+    </div>
+  </div>
+
+  <div class="profit-highlight" id="profitHighlight" style="display:none">
+    <div>
+      <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--green)" id="phTitle">Profit</div>
+      <div style="font-size:12px;color:var(--ink3)" id="phSub">—</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:1.8rem;font-weight:600;font-family:'DM Serif Display',serif;color:var(--green)" id="phValue">£0.00</div>
+      <div style="font-size:12px;color:var(--ink3)">30% of total sales</div>
+    </div>
+  </div>
+
+  <div class="card" style="overflow:hidden;padding:0;margin-bottom:1.25rem">
+    <div class="table-toolbar">
+      <h2>Daily Entries <span id="dailyCount" style="font-weight:400;color:var(--ink3);font-size:.8rem"></span></h2>
+      <button class="btn btn-outline btn-sm" onclick="exportSalesCSV()">⬇ CSV</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th class="num">Sales Amount</th><th class="num">Profit (30%)</th><th>Note</th><th style="text-align:center">Actions</th></tr></thead>
+        <tbody id="salesTableBody"></tbody>
+      </table>
+      <div class="empty" id="salesEmpty" style="display:none"><div class="icon">📅</div><p style="font-weight:600;margin-bottom:.3rem">No sales recorded</p><p style="font-size:12px">Add daily sale entries above.</p></div>
+    </div>
+    <div id="salesFooter" style="display:none;padding:.75rem 1rem;border-top:1px solid var(--border);background:#fafaf8;display:flex;gap:2rem;flex-wrap:wrap">
+      <span style="font-size:12px;color:var(--ink3)">Month Total: <strong id="footTotal">£0</strong></span>
+      <span style="font-size:12px;color:var(--ink3)">Profit (30%): <strong id="footProfit" style="color:var(--green)">£0</strong></span>
+      <span style="font-size:12px;color:var(--ink3)">Days: <strong id="footDays">0</strong></span>
+    </div>
+  </div>
+
+  <div class="card" style="overflow:hidden;padding:0">
+    <div class="table-toolbar">
+      <h2>💼 Monthly Summary &amp; Salaries</h2>
+      <button class="btn btn-primary btn-sm" onclick="openSalaryModal()">+ Add Salary</button>
+    </div>
+    <div style="padding:.6rem 1.25rem;background:var(--amber-lt);border-bottom:1px solid var(--border);font-size:12px;color:var(--amber)">
+      ℹ Enter staff salaries at the end of each month. They are deducted from the 30% profit to calculate Net Profit.
+    </div>
+    <div class="table-wrap">
+      <table class="month-summary-table">
+        <thead><tr><th>Month</th><th>Total Sales</th><th>Profit (30%)</th><th>Total Salaries</th><th>Net Profit</th><th style="text-align:center">Actions</th></tr></thead>
+        <tbody id="monthlySummaryBody"></tbody>
+      </table>
+      <div class="empty" id="monthlySummaryEmpty" style="display:none"><div class="icon">💼</div><p style="font-size:12px">No months with data yet.</p></div>
+    </div>
+  </div>
+
+</div><!-- /sec-sales -->
+
+<!-- ══════════ INVOICES SECTION ══════════ -->
+<div class="section" id="sec-invoices">
+
+  <div class="summary-grid">
+    <div class="scard"><div class="scard-label">Total Invoices</div><div class="scard-value blue" id="inv-total">£0.00</div></div>
+    <div class="scard"><div class="scard-label">Paid</div><div class="scard-value green" id="inv-paid">£0.00</div></div>
+    <div class="scard"><div class="scard-label">Unpaid</div><div class="scard-value amber" id="inv-unpaid">£0.00</div></div>
+    <div class="scard"><div class="scard-label">Overdue</div><div class="scard-value red" id="inv-overdue">£0.00</div></div>
+  </div>
+
+  <div class="card form-card" id="invFormCard" style="display:none">
+    <h2 style="font-size:.95rem;font-weight:600;margin-bottom:.9rem">✏️ <span id="invFormTitle">New Invoice</span></h2>
+    <div class="form-grid">
+      <div class="form-group"><label>Customer / Supplier</label><input type="text" id="invCust" placeholder="Acme Supplies"/></div>
+      <div class="form-group"><label>Invoice Number</label><input type="text" id="invNum" placeholder="INV-001"/></div>
+      <div class="form-group" style="grid-column:span 2"><label>Description</label><input type="text" id="invDesc" placeholder="Stock purchase…"/></div>
+      <div class="form-group"><label>Amount (£)</label><input type="number" id="invAmount" placeholder="0.00" min="0" step="0.01"/></div>
+      <div class="form-group"><label>Invoice Date</label><input type="date" id="invDate"/></div>
+      <div class="form-group"><label>Due Date</label><input type="date" id="invDue"/></div>
+      <div class="form-group"><label>Status</label><select id="invStatus"><option value="Unpaid">Unpaid</option><option value="Paid">Paid</option><option value="Overdue">Overdue</option></select></div>
+    </div>
+    <div class="form-footer">
+      <button class="btn btn-outline" onclick="cancelInvForm()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveInvoice()">Save Invoice</button>
+    </div>
+  </div>
+
+  <div class="card" style="overflow:hidden;padding:0">
+    <div class="table-toolbar">
+      <h2>Invoices <span id="invCount" style="font-weight:400;color:var(--ink3);font-size:.8rem"></span></h2>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+        <input type="text" id="invSearch" placeholder="Search…" style="width:180px;padding:.45rem .7rem" oninput="renderInvoices()"/>
+        <select id="invFilter" style="width:auto;padding:.45rem .7rem" onchange="renderInvoices()">
+          <option value="">All</option><option value="Paid">Paid</option><option value="Unpaid">Unpaid</option><option value="Overdue">Overdue</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="exportInvCSV()">⬇ CSV</button>
+        <button class="btn btn-primary btn-sm" onclick="openInvForm()">+ New</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Customer</th><th>Invoice #</th><th>Description</th><th class="num">Amount</th><th>Inv. Date</th><th>Due Date</th><th>Status</th><th style="text-align:center">Actions</th></tr></thead>
+        <tbody id="invTableBody"></tbody>
+      </table>
+      <div class="empty" id="invEmpty" style="display:none"><div class="icon">🧾</div><p style="font-weight:600;margin-bottom:.3rem">No invoices yet</p><p style="font-size:12px">Click <strong>+ New</strong> to add.</p></div>
+    </div>
+  </div>
+
+</div><!-- /sec-invoices -->
+</div><!-- /container -->
+
+<!-- SALARY MODAL -->
+<div class="modal-overlay" id="salaryModal">
+  <div class="modal">
+    <h2>💼 Add Monthly Salary</h2>
+    <div class="form-grid" style="grid-template-columns:1fr">
+      <div class="form-group"><label>Month</label><input type="month" id="salMonth"/></div>
+      <div class="form-group"><label>Employee Name</label><input type="text" id="salName" placeholder="John Smith"/></div>
+      <div class="form-group"><label>Salary Amount (£)</label><input type="number" id="salAmount" placeholder="0.00" min="0" step="0.01"/></div>
+      <div class="form-group"><label>Role (optional)</label><input type="text" id="salRole" placeholder="Shop assistant"/></div>
+    </div>
+    <div class="form-footer">
+      <button class="btn btn-outline" onclick="closeSalaryModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSalary()">Save Salary</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <h2>🗑 Confirm Delete</h2>
+    <p style="color:var(--ink3);font-size:13px;margin-bottom:1.25rem">This will permanently remove the entry from the app and from Google Sheets.</p>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ─── CONFIG ─── */
+const CLIENT_ID = '1043618720782-tu3ui7ihfr9mk5mkjtru5db1o0d5sbom.apps.googleusercontent.com';
+const SHEET_ID  = '1TRZyeBHr7e_VLz7Wq1rKbWHXOhhGuweja4ws5NgN7Zg';
+const SCOPES    = 'https://www.googleapis.com/auth/spreadsheets';
+const TABS      = { sales:'Sales', salaries:'Salaries', invoices:'Invoices' };
+
+/* ─── LOCAL DATA ─── */
+const KEYS = { sales:'shopSales2', salaries:'shopSalaries2', invoices:'shopInvoices2' };
+let sales    = lsLoad(KEYS.sales);
+let salaries = lsLoad(KEYS.salaries);
+let invoices = lsLoad(KEYS.invoices);
+
+function lsLoad(k){ try{ const r=localStorage.getItem(k); return r?JSON.parse(r):[]; }catch(e){return [];} }
+function lsSave(k,d){ localStorage.setItem(k,JSON.stringify(d)); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+/* ─── GOOGLE AUTH ─── */
+let tokenClient=null, accessToken=null, isSignedIn=false;
+
+window.onload = function(){
+  // Wait for GSI to load then init
+  const tryInit = setInterval(()=>{
+    if(window.google && google.accounts){
+      clearInterval(tryInit);
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: handleAuthResponse
+      });
+    }
+  }, 200);
+};
+
+async function handleAuthResponse(resp){
+  if(resp.error){ setSyncStatus('err','Auth error: '+resp.error); showToast('❌ Auth failed: '+resp.error); return; }
+  accessToken = resp.access_token;
+  isSignedIn  = true;
+  document.getElementById('signInBtn').style.display  = 'none';
+  document.getElementById('signOutBtn').style.display = 'inline-flex';
+  document.getElementById('pullBtn').style.display    = 'inline-flex';
+  document.getElementById('pushBtn').style.display    = 'inline-flex';
+  setSyncStatus('syncing','Connecting to Google Sheets…');
+  try {
+    await ensureSheetTabs();
+    await pullFromSheets();
+  } catch(e){
+    setSyncStatus('err', 'Setup error: '+e.message);
+    showToast('❌ '+e.message);
+  }
+}
+
+function signIn(){
+  if(!tokenClient){ showToast('⚠ Google not ready yet, wait a moment and try again.'); return; }
+  tokenClient.requestAccessToken({prompt:''});
+}
+
+function signOut(){
+  if(accessToken) google.accounts.oauth2.revoke(accessToken,()=>{});
+  accessToken=null; isSignedIn=false;
+  document.getElementById('signInBtn').style.display  = 'inline-flex';
+  document.getElementById('signOutBtn').style.display = 'none';
+  document.getElementById('pullBtn').style.display    = 'none';
+  document.getElementById('pushBtn').style.display    = 'none';
+  setSyncStatus('','Not signed in');
+}
+
+function setSyncStatus(state, msg){
+  const dot=document.getElementById('syncDot');
+  dot.className='sync-dot'+(state?' '+state:'');
+  document.getElementById('syncMsg').textContent=msg;
+}
+function setLastSync(){ document.getElementById('lastSyncTime').textContent='Last sync: '+new Date().toLocaleTimeString('en-GB'); }
+
+/* ─── SHEETS API ─── */
+async function sheetsReq(method, path, body=null){
+  const url=`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}${path}`;
+  const opts={method,headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'}};
+  if(body) opts.body=JSON.stringify(body);
+  const res=await fetch(url,opts);
+  const json=await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(json.error?.message||`HTTP ${res.status}`);
+  return json;
+}
+
+async function getExistingTabs(){
+  const d=await sheetsReq('GET','');
+  return d.sheets.map(s=>s.properties.title);
+}
+
+async function ensureSheetTabs(){
+  const existing=await getExistingTabs();
+  const headers={
+    [TABS.sales]:    [['ID','Date','Amount','Note']],
+    [TABS.salaries]: [['ID','Month','Name','Amount','Role']],
+    [TABS.invoices]: [['ID','Customer','Invoice Number','Description','Amount','Invoice Date','Due Date','Status']]
+  };
+  const toCreate=Object.values(TABS).filter(t=>!existing.includes(t));
+  if(toCreate.length>0){
+    await sheetsReq('POST',':batchUpdate',{requests:toCreate.map(t=>({addSheet:{properties:{title:t}}}))});
+    await sheetsReq('POST','/values:batchUpdate',{
+      valueInputOption:'RAW',
+      data:toCreate.map(t=>({range:`${t}!A1`,values:headers[t]}))
+    });
+  }
+}
+
+async function writeTab(tab, rows){
+  await sheetsReq('POST',`/values/${encodeURIComponent(tab+'!A2:Z')}:clear`,{});
+  if(!rows.length) return;
+  await sheetsReq('PUT',`/values/${encodeURIComponent(tab+'!A2')}?valueInputOption=RAW`,{values:rows});
+}
+
+async function readTab(tab){
+  try{
+    const d=await sheetsReq('GET',`/values/${encodeURIComponent(tab+'!A2:Z')}`);
+    return d.values||[];
+  }catch(e){ return []; }
+}
+
+/* ─── PUSH ─── */
+async function pushToSheets(){
+  if(!isSignedIn){ showToast('⚠ Sign in to Google first.'); return; }
+  setSyncStatus('syncing','Saving to Google Sheets…');
+  try{
+    await writeTab(TABS.sales,    sales.map(e=>[e.id,e.date,e.amount,e.note||'']));
+    await writeTab(TABS.salaries, salaries.map(e=>[e.id,e.month,e.name,e.amount,e.role||'']));
+    await writeTab(TABS.invoices, invoices.map(e=>[e.id,e.customer,e.invoice,e.desc,e.amount,e.invDate,e.dueDate,e.status]));
+    setSyncStatus('ok','Saved to Google Sheets ✓');
+    setLastSync();
+    showToast('✅ Synced to Google Sheets.');
+  }catch(err){
+    setSyncStatus('err','Save failed: '+err.message);
+    showToast('❌ Sync error: '+err.message);
+  }
+}
+
+/* ─── PULL ─── */
+async function pullFromSheets(){
+  if(!isSignedIn){ showToast('⚠ Sign in to Google first.'); return; }
+  setSyncStatus('syncing','Loading from Google Sheets…');
+  try{
+    const[sR,salR,invR]=await Promise.all([readTab(TABS.sales),readTab(TABS.salaries),readTab(TABS.invoices)]);
+    if(sR.length){
+      sales=sR.map(r=>({id:r[0]||uid(),date:r[1]||'',amount:parseFloat(r[2])||0,note:r[3]||''}));
+      lsSave(KEYS.sales,sales);
+    }
+    if(salR.length){
+      salaries=salR.map(r=>({id:r[0]||uid(),month:r[1]||'',name:r[2]||'',amount:parseFloat(r[3])||0,role:r[4]||''}));
+      lsSave(KEYS.salaries,salaries);
+    }
+    if(invR.length){
+      invoices=invR.map(r=>({id:r[0]||uid(),customer:r[1]||'',invoice:r[2]||'',desc:r[3]||'',amount:parseFloat(r[4])||0,invDate:r[5]||'',dueDate:r[6]||'',status:r[7]||'Unpaid'}));
+      lsSave(KEYS.invoices,invoices);
+    }
+    autoMarkOverdue();
+    renderSalesSection(); renderInvoices(); renderInvSummary();
+    setSyncStatus('ok','Synced from Google Sheets ✓');
+    setLastSync();
+    showToast('✅ Data loaded from Google Sheets.');
+  }catch(err){
+    setSyncStatus('err','Load failed: '+err.message);
+    showToast('❌ Pull error: '+err.message);
+  }
+}
+
+/* ─── TABS ─── */
+function switchTab(tab,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+tab).classList.add('active');
+  btn.classList.add('active');
+  if(tab==='sales') renderSalesSection();
+  if(tab==='invoices'){ autoMarkOverdue(); renderInvoices(); renderInvSummary(); }
+}
+
+/* ─── SALES ADD ─── */
+async function addSale(){
+  const date=document.getElementById('saleDate').value;
+  const amount=parseFloat(document.getElementById('saleAmount').value);
+  const note=document.getElementById('saleNote').value.trim();
+  if(!date){ showToast('⚠ Select a date.'); return; }
+  if(isNaN(amount)||amount<0){ showToast('⚠ Enter a valid amount.'); return; }
+  if(sales.find(s=>s.date===date)){ showToast('⚠ Entry for this date already exists. Edit it instead.'); return; }
+  sales.push({id:uid(),date,amount,note});
+  lsSave(KEYS.sales,sales);
+  document.getElementById('saleAmount').value='';
+  document.getElementById('saleNote').value='';
+  showToast('✅ Sale saved.');
+  renderSalesSection();
+  await pushToSheets();
+}
+
+/* ─── SALES RENDER ─── */
+function goToCurrentMonth(){
+  const n=new Date();
+  document.getElementById('viewMonth').value=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
+  renderSalesSection();
+}
+
+function renderSalesSection(){
+  const vm=document.getElementById('viewMonth').value;
+  if(!vm){ goToCurrentMonth(); return; }
+  const[yr,mo]=vm.split('-').map(Number);
+  const monthName=new Date(yr,mo-1,1).toLocaleString('en-GB',{month:'long',year:'numeric'});
+  const ms=sales.filter(s=>{const d=new Date(s.date);return d.getFullYear()===yr&&d.getMonth()+1===mo;}).sort((a,b)=>a.date.localeCompare(b.date));
+  const totalSales=ms.reduce((s,e)=>s+parseFloat(e.amount),0);
+  const profit=totalSales*0.3;
+  const salMonth=salaries.filter(s=>s.month===vm);
+  const totalSal=salMonth.reduce((s,e)=>s+parseFloat(e.amount),0);
+  const net=profit-totalSal;
+
+  document.getElementById('sc-monthSales').textContent=fmt(totalSales);
+  document.getElementById('sc-profit').textContent=fmt(profit);
+  document.getElementById('sc-salary').textContent=fmt(totalSal);
+  document.getElementById('sc-net').textContent=fmt(net);
+  document.getElementById('sc-monthName').textContent=monthName;
+  document.getElementById('sc-net').className='scard-value '+(net>=0?'green':'red');
+
+  const ph=document.getElementById('profitHighlight');
+  if(totalSales>0){
+    ph.style.display='flex';
+    document.getElementById('phTitle').textContent='Profit — '+monthName;
+    document.getElementById('phValue').textContent=fmt(profit);
+    document.getElementById('phSub').textContent=`Total sales: ${fmt(totalSales)} × 30%`;
+  } else ph.style.display='none';
+
+  const tbody=document.getElementById('salesTableBody');
+  const empty=document.getElementById('salesEmpty');
+  const footer=document.getElementById('salesFooter');
+  document.getElementById('dailyCount').textContent=`(${ms.length} day${ms.length!==1?'s':''})`;
+
+  if(ms.length===0){ tbody.innerHTML=''; empty.style.display='block'; footer.style.display='none'; }
+  else{
+    empty.style.display='none'; footer.style.display='flex';
+    document.getElementById('footTotal').textContent=fmt(totalSales);
+    document.getElementById('footProfit').textContent=fmt(profit);
+    document.getElementById('footDays').textContent=ms.length;
+    tbody.innerHTML=ms.map(e=>`
+      <tr>
+        <td>${fmtDate(e.date)}</td>
+        <td class="num">£${parseFloat(e.amount).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        <td class="num" style="color:var(--green)">£${(parseFloat(e.amount)*0.3).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        <td class="muted">${esc(e.note||'—')}</td>
+        <td style="text-align:center;white-space:nowrap">
+          <button class="btn btn-outline btn-sm" onclick="editSale('${e.id}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="startDelete('sale','${e.id}')">Del</button>
+        </td>
+      </tr>`).join('');
+  }
+  renderMonthlySummary();
+  renderMiniBar();
+}
+
+function editSale(id){
+  const e=sales.find(s=>s.id===id); if(!e) return;
+  document.getElementById('saleDate').value=e.date;
+  document.getElementById('saleAmount').value=e.amount;
+  document.getElementById('saleNote').value=e.note||'';
+  sales=sales.filter(s=>s.id!==id);
+  lsSave(KEYS.sales,sales);
+  renderSalesSection();
+  showToast('ℹ Loaded for editing — update values and click Save Sale.');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderMonthlySummary(){
+  const set=new Set(sales.map(s=>s.date.slice(0,7)));
+  const months=[...set].sort().reverse();
+  const tbody=document.getElementById('monthlySummaryBody');
+  const empty=document.getElementById('monthlySummaryEmpty');
+  if(!months.length){ tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  tbody.innerHTML=months.map(mo=>{
+    const[yr,m]=mo.split('-').map(Number);
+    const label=new Date(yr,m-1,1).toLocaleString('en-GB',{month:'long',year:'numeric'});
+    const total=sales.filter(s=>s.date.startsWith(mo)).reduce((s,e)=>s+parseFloat(e.amount),0);
+    const profit=total*0.3;
+    const salAmt=salaries.filter(s=>s.month===mo).reduce((s,e)=>s+parseFloat(e.amount),0);
+    const net=profit-salAmt;
+    const salList=salaries.filter(s=>s.month===mo);
+    return `<tr>
+      <td><strong>${label}</strong></td>
+      <td class="num">£${total.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td class="num" style="color:var(--green)">£${profit.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td class="num">£${salAmt.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}${salList.length?` <span class="muted" style="font-size:10px">(${salList.length} staff)</span>`:''}
+      </td>
+      <td class="num" style="color:${net>=0?'var(--green)':'var(--red)'}">
+        £${Math.abs(net).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})} ${net<0?'<span style="font-size:10px">(loss)</span>':''}
+      </td>
+      <td style="text-align:center;white-space:nowrap">
+        <button class="btn btn-outline btn-sm" onclick="viewMonthSales('${mo}')">View</button>
+        <button class="btn btn-primary btn-sm" onclick="openSalaryForMonth('${mo}')">+ Salary</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function viewMonthSales(mo){ document.getElementById('viewMonth').value=mo; renderSalesSection(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+function renderMiniBar(){
+  const now=new Date(); const bars=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    bars.push({label:d.toLocaleString('en-GB',{month:'short'}),total:sales.filter(s=>s.date.startsWith(key)).reduce((s,e)=>s+parseFloat(e.amount),0)});
+  }
+  const max=Math.max(...bars.map(b=>b.total),1);
+  const colors=['#4a8c63','#5fa378','#74b98d','#8dd0a4','#a6dfb8','#bfedce'];
+  document.getElementById('salesMiniBar').innerHTML=bars.map((b,i)=>`
+    <div class="mini-bar-wrap">
+      <div class="mini-bar" style="height:${Math.round(b.total/max*100)}%;background:${colors[i]};min-height:${b.total>0?3:0}px" title="£${b.total.toFixed(2)}"></div>
+      <div class="mini-bar-label">${b.label}</div>
+    </div>`).join('');
+}
+
+/* ─── SALARY MODAL ─── */
+function openSalaryModal(){
+  const vm=document.getElementById('viewMonth').value;
+  if(vm) document.getElementById('salMonth').value=vm;
+  else{ const n=new Date(); document.getElementById('salMonth').value=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`; }
+  document.getElementById('salaryModal').classList.add('open');
+}
+function openSalaryForMonth(mo){ document.getElementById('salMonth').value=mo; document.getElementById('salaryModal').classList.add('open'); }
+function closeSalaryModal(){
+  document.getElementById('salaryModal').classList.remove('open');
+  ['salName','salAmount','salRole'].forEach(id=>document.getElementById(id).value='');
+}
+async function saveSalary(){
+  const month=document.getElementById('salMonth').value;
+  const name=document.getElementById('salName').value.trim();
+  const amount=parseFloat(document.getElementById('salAmount').value);
+  const role=document.getElementById('salRole').value.trim();
+  if(!month||!name||isNaN(amount)||amount<0){ showToast('⚠ Fill in all required fields.'); return; }
+  salaries.push({id:uid(),month,name,amount,role});
+  lsSave(KEYS.salaries,salaries);
+  closeSalaryModal();
+  showToast('✅ Salary saved.');
+  renderSalesSection();
+  await pushToSheets();
+}
+
+/* ─── INVOICES ─── */
+let invEditId=null, invSortKey=null, invSortDir=1;
+
+function autoMarkOverdue(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  invoices.forEach(e=>{ if(e.status!=='Paid'){ const d=new Date(e.dueDate); d.setHours(0,0,0,0); if(d<today) e.status='Overdue'; } });
+  lsSave(KEYS.invoices,invoices);
+}
+
+function openInvForm(id=null){
+  invEditId=id;
+  document.getElementById('invFormCard').style.display='block';
+  document.getElementById('invFormTitle').textContent=id?'Edit Invoice':'New Invoice';
+  if(!id){
+    ['invCust','invNum','invDesc','invAmount','invDate','invDue'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('invStatus').value='Unpaid';
+    document.getElementById('invDate').value=new Date().toISOString().split('T')[0];
+  } else {
+    const e=invoices.find(i=>i.id===id); if(!e) return;
+    document.getElementById('invCust').value=e.customer; document.getElementById('invNum').value=e.invoice;
+    document.getElementById('invDesc').value=e.desc; document.getElementById('invAmount').value=e.amount;
+    document.getElementById('invDate').value=e.invDate; document.getElementById('invDue').value=e.dueDate;
+    document.getElementById('invStatus').value=e.status;
+  }
+  document.getElementById('invFormCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function cancelInvForm(){ document.getElementById('invFormCard').style.display='none'; invEditId=null; }
+
+async function saveInvoice(){
+  const customer=document.getElementById('invCust').value.trim();
+  const invoice=document.getElementById('invNum').value.trim();
+  const desc=document.getElementById('invDesc').value.trim();
+  const amount=parseFloat(document.getElementById('invAmount').value);
+  const invDate=document.getElementById('invDate').value;
+  const dueDate=document.getElementById('invDue').value;
+  const status=document.getElementById('invStatus').value;
+  if(!customer||!invoice||!desc||isNaN(amount)||!invDate||!dueDate){ showToast('⚠ Fill in all fields.'); return; }
+  const rec={customer,invoice,desc,amount,invDate,dueDate,status};
+  if(invEditId){ const i=invoices.findIndex(e=>e.id===invEditId); if(i!==-1) invoices[i]={id:invEditId,...rec}; }
+  else invoices.push({id:uid(),...rec});
+  lsSave(KEYS.invoices,invoices);
+  cancelInvForm(); autoMarkOverdue(); renderInvoices(); renderInvSummary();
+  showToast('✅ Invoice saved.');
+  await pushToSheets();
+}
+
+function invSort(k){ if(invSortKey===k) invSortDir*=-1; else{invSortKey=k;invSortDir=1;} renderInvoices(); }
+
+function renderInvoices(){
+  autoMarkOverdue();
+  const search=document.getElementById('invSearch').value.toLowerCase();
+  const filter=document.getElementById('invFilter').value;
+  let vis=invoices.filter(e=>(!search||e.customer.toLowerCase().includes(search)||e.invoice.toLowerCase().includes(search))&&(!filter||e.status===filter));
+  if(invSortKey) vis=[...vis].sort((a,b)=>invSortKey==='amount'?(a.amount-b.amount)*invSortDir:String(a[invSortKey]).localeCompare(String(b[invSortKey]))*invSortDir);
+  const tbody=document.getElementById('invTableBody');
+  const empty=document.getElementById('invEmpty');
+  document.getElementById('invCount').textContent=`(${vis.length})`;
+  if(!vis.length){ tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  tbody.innerHTML=vis.map(e=>{
+    const bc=e.status==='Paid'?'badge-paid':e.status==='Overdue'?'badge-overdue':'badge-unpaid';
+    return `<tr ${e.status==='Overdue'?'style="background:#fff9f9"':''}>
+      <td><strong>${esc(e.customer)}</strong></td>
+      <td style="font-family:monospace;color:var(--blue)">${esc(e.invoice)}</td>
+      <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(e.desc)}</td>
+      <td class="num">£${parseFloat(e.amount).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td>${fmtDate(e.invDate)}</td><td>${fmtDate(e.dueDate)}</td>
+      <td><span class="badge ${bc}">${e.status}</span></td>
+      <td style="text-align:center;white-space:nowrap">
+        <button class="btn btn-outline btn-sm" onclick="openInvForm('${e.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="startDelete('invoice','${e.id}')">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderInvSummary(){
+  const total=invoices.reduce((s,e)=>s+parseFloat(e.amount),0);
+  const paid=invoices.filter(e=>e.status==='Paid').reduce((s,e)=>s+parseFloat(e.amount),0);
+  const unpaid=invoices.filter(e=>e.status==='Unpaid').reduce((s,e)=>s+parseFloat(e.amount),0);
+  const overdue=invoices.filter(e=>e.status==='Overdue').reduce((s,e)=>s+parseFloat(e.amount),0);
+  document.getElementById('inv-total').textContent=fmt(total);
+  document.getElementById('inv-paid').textContent=fmt(paid);
+  document.getElementById('inv-unpaid').textContent=fmt(unpaid);
+  document.getElementById('inv-overdue').textContent=fmt(overdue);
+}
+
+/* ─── DELETE ─── */
+let deleteTarget=null;
+function startDelete(type,id){ deleteTarget={type,id}; document.getElementById('deleteModal').classList.add('open'); }
+function closeDeleteModal(){ deleteTarget=null; document.getElementById('deleteModal').classList.remove('open'); }
+async function confirmDelete(){
+  if(!deleteTarget) return;
+  if(deleteTarget.type==='sale')    { sales=sales.filter(e=>e.id!==deleteTarget.id);       lsSave(KEYS.sales,sales);    renderSalesSection(); }
+  if(deleteTarget.type==='salary')  { salaries=salaries.filter(e=>e.id!==deleteTarget.id); lsSave(KEYS.salaries,salaries); renderSalesSection(); }
+  if(deleteTarget.type==='invoice') { invoices=invoices.filter(e=>e.id!==deleteTarget.id); lsSave(KEYS.invoices,invoices); renderInvoices(); renderInvSummary(); }
+  closeDeleteModal(); showToast('🗑 Deleted.');
+  await pushToSheets();
+}
+
+/* ─── CSV EXPORT ─── */
+function exportSalesCSV(){
+  if(!sales.length){ showToast('⚠ No sales to export.'); return; }
+  dlCSV([['Date','Sales Amount','Profit (30%)','Note'],...sales.map(e=>[e.date,e.amount,(e.amount*.3).toFixed(2),`"${(e.note||'').replace(/"/g,'""')}"`])],'sales.csv');
+}
+function exportInvCSV(){
+  if(!invoices.length){ showToast('⚠ No invoices.'); return; }
+  dlCSV([['Customer','Invoice','Description','Amount','Inv Date','Due Date','Status'],...invoices.map(e=>[`"${e.customer}"`,e.invoice,`"${e.desc}"`,e.amount,e.invDate,e.dueDate,e.status])],'invoices.csv');
+}
+function dlCSV(rows,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'})); a.download=name; a.click(); showToast('✅ Exported.'); }
+
+/* ─── UTILS ─── */
+function fmt(v){ return '£'+v.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDate(d){ if(!d) return '—'; const p=d.split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d; }
+function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
+
+['deleteModal','salaryModal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',function(e){ if(e.target===this) this.classList.remove('open'); });
+});
+
+/* ─── INIT ─── */
+(function(){
+  document.getElementById('saleDate').value=new Date().toISOString().split('T')[0];
+  const n=new Date();
+  document.getElementById('viewMonth').value=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
+  autoMarkOverdue();
+  renderSalesSection();
+  renderInvSummary();
+})();
+</script>
+</body>
+</html>
