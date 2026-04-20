@@ -15,6 +15,7 @@
   --red:#b93232;--red-lt:#fdf2f2;
   --amber:#b06000;--amber-lt:#fff8ed;
   --blue:#1a4fa0;--blue-lt:#eef3fc;
+  --purple:#6b21a8;--purple-lt:#f5f0ff;
   --accent:#2a5f3f;--accent2:#4a8c63;
   --r:10px;
 }
@@ -40,7 +41,7 @@ header p{font-size:12px;opacity:.75;margin-top:2px}
 .scard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.1rem 1.25rem}
 .scard-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-bottom:.3rem}
 .scard-value{font-size:1.45rem;font-weight:600;font-family:'DM Serif Display',serif}
-.scard-value.green{color:var(--green)}.scard-value.red{color:var(--red)}.scard-value.amber{color:var(--amber)}.scard-value.blue{color:var(--blue)}
+.scard-value.green{color:var(--green)}.scard-value.red{color:var(--red)}.scard-value.amber{color:var(--amber)}.scard-value.blue{color:var(--blue)}.scard-value.purple{color:var(--purple)}
 .scard-sub{font-size:11px;color:var(--ink3);margin-top:.2rem}
 .form-card{margin-bottom:1.25rem}
 .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.7rem}
@@ -55,6 +56,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent2);box-shadow:0 0
 .btn-outline{background:transparent;border-color:var(--border2);color:var(--ink)}.btn-outline:hover{background:var(--bg)}
 .btn-danger{background:transparent;border-color:var(--red);color:var(--red)}.btn-danger:hover{background:var(--red-lt)}
 .btn-google{background:#4285f4;color:#fff;border:none}.btn-google:hover{background:#3367d6}
+.btn-purple{background:var(--purple);color:#fff;border:none}.btn-purple:hover{background:#7c3aed}
 .btn-sm{padding:.3rem .6rem;font-size:11px;border-radius:6px}
 .table-toolbar{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1.25rem;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:.6rem}
 .table-toolbar h2{font-size:.95rem;font-weight:600}
@@ -73,6 +75,7 @@ tr:hover td{background:#fafaf8}
 .badge-unpaid{background:var(--amber-lt);color:var(--amber)}
 .badge-overdue{background:var(--red-lt);color:var(--red)}
 .profit-highlight{background:linear-gradient(135deg,var(--green-lt),#fff);border:1px solid #a8d5b8;border-radius:var(--r);padding:1.1rem 1.4rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem}
+.income-highlight{background:linear-gradient(135deg,var(--purple-lt),#fff);border:1px solid #c4b5fd;border-radius:var(--r);padding:1.1rem 1.4rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem}
 .mini-bars{display:flex;align-items:flex-end;gap:4px;height:80px;padding:0 0 4px}
 .mini-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
 .mini-bar{width:100%;border-radius:3px 3px 0 0;min-height:2px}
@@ -90,6 +93,7 @@ tr:hover td{background:#fafaf8}
 #toast.show{opacity:1;transform:translateY(0)}
 .empty{text-align:center;padding:2.5rem 1rem;color:var(--ink3)}
 .empty .icon{font-size:2.5rem;margin-bottom:.5rem}
+.week-badge{display:inline-block;padding:.18rem .65rem;border-radius:99px;font-size:11px;font-weight:600;background:var(--purple-lt);color:var(--purple)}
 @media(max-width:640px){header{padding:.8rem 1rem}.container{padding:1rem}.summary-grid{grid-template-columns:1fr 1fr}#syncBar{padding:.5rem 1rem}}
 </style>
 </head>
@@ -98,10 +102,11 @@ tr:hover td{background:#fafaf8}
 <header>
   <div>
     <h1>🏪 Shop Tracker Dashboard</h1>
-    <p>Daily sales &middot; Monthly profit &middot; Invoices &middot; Google Sheets sync</p>
+    <p>Daily sales &middot; Weekly income &middot; Monthly profit &middot; Invoices &middot; Google Sheets sync</p>
   </div>
   <div class="tab-nav">
     <button class="tab-btn active" onclick="switchTab('sales',this)">📈 Sales</button>
+    <button class="tab-btn" onclick="switchTab('income',this)">💷 Weekly Income</button>
     <button class="tab-btn" onclick="switchTab('invoices',this)">🧾 Invoices</button>
   </div>
 </header>
@@ -206,6 +211,108 @@ tr:hover td{background:#fafaf8}
 
 </div><!-- /sec-sales -->
 
+<!-- ══════════ WEEKLY INCOME SECTION ══════════ -->
+<div class="section" id="sec-income">
+
+  <div class="summary-grid">
+    <div class="scard"><div class="scard-label">This Week's Income</div><div class="scard-value purple" id="wi-thisWeek">£0.00</div><div class="scard-sub" id="wi-weekLabel">—</div></div>
+    <div class="scard"><div class="scard-label">This Month Total</div><div class="scard-value blue" id="wi-thisMonth">£0.00</div><div class="scard-sub" id="wi-monthLabel">—</div></div>
+    <div class="scard"><div class="scard-label">Year to Date</div><div class="scard-value green" id="wi-ytd">£0.00</div><div class="scard-sub" id="wi-ytdLabel">—</div></div>
+    <div class="scard"><div class="scard-label">Weekly Average</div><div class="scard-value amber" id="wi-avg">£0.00</div><div class="scard-sub">All recorded weeks</div></div>
+  </div>
+
+  <div class="card form-card">
+    <h2 style="font-size:.95rem;font-weight:600;margin-bottom:.9rem">➕ Add Weekly Income</h2>
+    <div style="padding:.55rem .9rem;background:var(--purple-lt);border:1px solid #c4b5fd;border-radius:7px;font-size:12px;color:var(--purple);margin-bottom:.9rem">
+      💷 Record total income received for a given week. The date will be snapped to the Monday of that week automatically.
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Week Starting (Monday)</label>
+        <input type="date" id="wiDate"/>
+      </div>
+      <div class="form-group">
+        <label>Income Amount (£)</label>
+        <input type="number" id="wiAmount" placeholder="0.00" min="0" step="0.01"/>
+      </div>
+      <div class="form-group">
+        <label>Source / Category</label>
+        <select id="wiSource">
+          <option value="Shop Sales">Shop Sales</option>
+          <option value="Online Sales">Online Sales</option>
+          <option value="Services">Services</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Note (optional)</label>
+        <input type="text" id="wiNote" placeholder="e.g. Good trading week…"/>
+      </div>
+    </div>
+    <div class="form-footer">
+      <button class="btn btn-outline" onclick="clearIncomeForm()">Clear</button>
+      <button class="btn btn-purple" onclick="addWeeklyIncome()">Save Weekly Income</button>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem">
+    <div class="card-sm">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);margin-bottom:.6rem">Filter by Month</div>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <input type="month" id="wiViewMonth" style="flex:1" onchange="renderIncomeSection()"/>
+        <button class="btn btn-outline btn-sm" onclick="clearIncomeMonthFilter()">All</button>
+      </div>
+    </div>
+    <div class="card-sm">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);margin-bottom:.4rem">Last 8 Weeks</div>
+      <div class="mini-bars" id="incomeMiniBar"><div style="font-size:11px;color:var(--ink3)">No data yet</div></div>
+    </div>
+  </div>
+
+  <div class="income-highlight" id="incomeHighlight" style="display:none">
+    <div>
+      <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--purple)" id="ihTitle">Total Income</div>
+      <div style="font-size:12px;color:var(--ink3)" id="ihSub">—</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:1.8rem;font-weight:600;font-family:'DM Serif Display',serif;color:var(--purple)" id="ihValue">£0.00</div>
+      <div style="font-size:12px;color:var(--ink3)" id="ihCount">0 weeks recorded</div>
+    </div>
+  </div>
+
+  <div class="card" style="overflow:hidden;padding:0;margin-bottom:1.25rem">
+    <div class="table-toolbar">
+      <h2>Weekly Income Entries <span id="wiCount" style="font-weight:400;color:var(--ink3);font-size:.8rem"></span></h2>
+      <button class="btn btn-outline btn-sm" onclick="exportIncomeCSV()">⬇ CSV</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Week Starting</th><th>Week</th><th class="num">Income Amount</th><th>Source</th><th>Note</th><th style="text-align:center">Actions</th></tr></thead>
+        <tbody id="incomeTableBody"></tbody>
+      </table>
+      <div class="empty" id="incomeEmpty" style="display:none"><div class="icon">💷</div><p style="font-weight:600;margin-bottom:.3rem">No weekly income recorded</p><p style="font-size:12px">Add entries using the form above.</p></div>
+    </div>
+    <div id="incomeFooter" style="display:none;padding:.75rem 1rem;border-top:1px solid var(--border);background:#fafaf8;display:flex;gap:2rem;flex-wrap:wrap">
+      <span style="font-size:12px;color:var(--ink3)">Shown Total: <strong id="wiFootTotal">£0</strong></span>
+      <span style="font-size:12px;color:var(--ink3)">Weeks: <strong id="wiFootWeeks">0</strong></span>
+    </div>
+  </div>
+
+  <div class="card" style="overflow:hidden;padding:0">
+    <div class="table-toolbar">
+      <h2>📅 Monthly Income Breakdown</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="month-summary-table">
+        <thead><tr><th>Month</th><th>Weeks</th><th class="num">Total Income</th><th class="num">Weekly Avg</th><th class="num">Best Week</th></tr></thead>
+        <tbody id="incomeMonthlyBody"></tbody>
+      </table>
+      <div class="empty" id="incomeMonthlyEmpty" style="display:none"><div class="icon">📅</div><p style="font-size:12px">No monthly data yet.</p></div>
+    </div>
+  </div>
+
+</div><!-- /sec-income -->
+
 <!-- ══════════ INVOICES SECTION ══════════ -->
 <div class="section" id="sec-invoices">
 
@@ -293,13 +400,14 @@ tr:hover td{background:#fafaf8}
 const CLIENT_ID = '1043618720782-3i23qraognif7gh0j3ct0denp3g8isv3.apps.googleusercontent.com';
 const SHEET_ID  = '1TRZyeBHr7e_VLz7Wq1rKbWHXOhhGuweja4ws5NgN7Zg';
 const SCOPES    = 'https://www.googleapis.com/auth/spreadsheets';
-const TABS      = { sales:'Sales', salaries:'Salaries', invoices:'Invoices' };
+const TABS      = { sales:'Sales', salaries:'Salaries', invoices:'Invoices', income:'WeeklyIncome' };
 
 /* ─── LOCAL DATA ─── */
-const KEYS = { sales:'shopSales2', salaries:'shopSalaries2', invoices:'shopInvoices2' };
-let sales    = lsLoad(KEYS.sales);
-let salaries = lsLoad(KEYS.salaries);
-let invoices = lsLoad(KEYS.invoices);
+const KEYS = { sales:'shopSales2', salaries:'shopSalaries2', invoices:'shopInvoices2', income:'shopWeeklyIncome1' };
+let sales        = lsLoad(KEYS.sales);
+let salaries     = lsLoad(KEYS.salaries);
+let invoices     = lsLoad(KEYS.invoices);
+let weeklyIncome = lsLoad(KEYS.income);
 
 function lsLoad(k){ try{ const r=localStorage.getItem(k); return r?JSON.parse(r):[]; }catch(e){return [];} }
 function lsSave(k,d){ localStorage.setItem(k,JSON.stringify(d)); }
@@ -309,7 +417,6 @@ function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(
 let tokenClient=null, accessToken=null, isSignedIn=false;
 
 window.onload = function(){
-  // Wait for GSI to load then init
   const tryInit = setInterval(()=>{
     if(window.google && google.accounts){
       clearInterval(tryInit);
@@ -383,7 +490,8 @@ async function ensureSheetTabs(){
   const headers={
     [TABS.sales]:    [['ID','Date','Amount','Note']],
     [TABS.salaries]: [['ID','Month','Name','Amount','Role']],
-    [TABS.invoices]: [['ID','Customer','Invoice Number','Description','Amount','Invoice Date','Due Date','Status']]
+    [TABS.invoices]: [['ID','Customer','Invoice Number','Description','Amount','Invoice Date','Due Date','Status']],
+    [TABS.income]:   [['ID','WeekStarting','Amount','Source','Note']]
   };
   const toCreate=Object.values(TABS).filter(t=>!existing.includes(t));
   if(toCreate.length>0){
@@ -416,6 +524,7 @@ async function pushToSheets(){
     await writeTab(TABS.sales,    sales.map(e=>[e.id,e.date,e.amount,e.note||'']));
     await writeTab(TABS.salaries, salaries.map(e=>[e.id,e.month,e.name,e.amount,e.role||'']));
     await writeTab(TABS.invoices, invoices.map(e=>[e.id,e.customer,e.invoice,e.desc,e.amount,e.invDate,e.dueDate,e.status]));
+    await writeTab(TABS.income,   weeklyIncome.map(e=>[e.id,e.weekStart,e.amount,e.source,e.note||'']));
     setSyncStatus('ok','Saved to Google Sheets ✓');
     setLastSync();
     showToast('✅ Synced to Google Sheets.');
@@ -430,7 +539,7 @@ async function pullFromSheets(){
   if(!isSignedIn){ showToast('⚠ Sign in to Google first.'); return; }
   setSyncStatus('syncing','Loading from Google Sheets…');
   try{
-    const[sR,salR,invR]=await Promise.all([readTab(TABS.sales),readTab(TABS.salaries),readTab(TABS.invoices)]);
+    const[sR,salR,invR,wiR]=await Promise.all([readTab(TABS.sales),readTab(TABS.salaries),readTab(TABS.invoices),readTab(TABS.income)]);
     if(sR.length){
       sales=sR.map(r=>({id:r[0]||uid(),date:r[1]||'',amount:parseFloat(r[2])||0,note:r[3]||''}));
       lsSave(KEYS.sales,sales);
@@ -443,8 +552,12 @@ async function pullFromSheets(){
       invoices=invR.map(r=>({id:r[0]||uid(),customer:r[1]||'',invoice:r[2]||'',desc:r[3]||'',amount:parseFloat(r[4])||0,invDate:r[5]||'',dueDate:r[6]||'',status:r[7]||'Unpaid'}));
       lsSave(KEYS.invoices,invoices);
     }
+    if(wiR.length){
+      weeklyIncome=wiR.map(r=>({id:r[0]||uid(),weekStart:r[1]||'',amount:parseFloat(r[2])||0,source:r[3]||'Shop Sales',note:r[4]||''}));
+      lsSave(KEYS.income,weeklyIncome);
+    }
     autoMarkOverdue();
-    renderSalesSection(); renderInvoices(); renderInvSummary();
+    renderSalesSection(); renderInvoices(); renderInvSummary(); renderIncomeSection();
     setSyncStatus('ok','Synced from Google Sheets ✓');
     setLastSync();
     showToast('✅ Data loaded from Google Sheets.');
@@ -461,6 +574,7 @@ function switchTab(tab,btn){
   document.getElementById('sec-'+tab).classList.add('active');
   btn.classList.add('active');
   if(tab==='sales') renderSalesSection();
+  if(tab==='income') renderIncomeSection();
   if(tab==='invoices'){ autoMarkOverdue(); renderInvoices(); renderInvSummary(); }
 }
 
@@ -604,6 +718,179 @@ function renderMiniBar(){
     </div>`).join('');
 }
 
+/* ─── WEEKLY INCOME ─── */
+
+function getISOWeek(dateStr){
+  const d=new Date(dateStr);
+  const jan4=new Date(d.getFullYear(),0,4);
+  const startOfWeek1=new Date(jan4);
+  startOfWeek1.setDate(jan4.getDate()-((jan4.getDay()+6)%7));
+  const diff=d-startOfWeek1;
+  const week=Math.floor(diff/(7*24*60*60*1000))+1;
+  return `W${String(week).padStart(2,'0')} ${d.getFullYear()}`;
+}
+
+function toMonday(dateStr){
+  const d=new Date(dateStr);
+  const day=d.getDay();
+  const diff=(day===0?-6:1-day);
+  d.setDate(d.getDate()+diff);
+  return d.toISOString().split('T')[0];
+}
+
+function getThisWeekStart(){
+  return toMonday(new Date().toISOString().split('T')[0]);
+}
+
+function clearIncomeForm(){
+  document.getElementById('wiAmount').value='';
+  document.getElementById('wiNote').value='';
+  document.getElementById('wiSource').value='Shop Sales';
+}
+
+function clearIncomeMonthFilter(){
+  document.getElementById('wiViewMonth').value='';
+  renderIncomeSection();
+}
+
+async function addWeeklyIncome(){
+  const date=document.getElementById('wiDate').value;
+  const amount=parseFloat(document.getElementById('wiAmount').value);
+  const source=document.getElementById('wiSource').value;
+  const note=document.getElementById('wiNote').value.trim();
+  if(!date){ showToast('⚠ Select a week starting date.'); return; }
+  if(isNaN(amount)||amount<0){ showToast('⚠ Enter a valid income amount.'); return; }
+  const weekStart=toMonday(date);
+  weeklyIncome.push({id:uid(),weekStart,amount,source,note});
+  lsSave(KEYS.income,weeklyIncome);
+  document.getElementById('wiAmount').value='';
+  document.getElementById('wiNote').value='';
+  showToast('✅ Weekly income saved.');
+  renderIncomeSection();
+  await pushToSheets();
+}
+
+function editWeeklyIncome(id){
+  const e=weeklyIncome.find(w=>w.id===id); if(!e) return;
+  document.getElementById('wiDate').value=e.weekStart;
+  document.getElementById('wiAmount').value=e.amount;
+  document.getElementById('wiSource').value=e.source||'Shop Sales';
+  document.getElementById('wiNote').value=e.note||'';
+  weeklyIncome=weeklyIncome.filter(w=>w.id!==id);
+  lsSave(KEYS.income,weeklyIncome);
+  renderIncomeSection();
+  showToast('ℹ Loaded for editing — update and click Save Weekly Income.');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderIncomeSection(){
+  const filterMonth=document.getElementById('wiViewMonth').value;
+  const now=new Date();
+  const thisWeekStart=getThisWeekStart();
+  const thisMonthKey=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+  const thisWeekTotal=weeklyIncome.filter(w=>w.weekStart===thisWeekStart).reduce((s,e)=>s+parseFloat(e.amount),0);
+  const thisMonthTotal=weeklyIncome.filter(w=>w.weekStart.startsWith(thisMonthKey)).reduce((s,e)=>s+parseFloat(e.amount),0);
+  const ytdKey=`${now.getFullYear()}-`;
+  const ytdTotal=weeklyIncome.filter(w=>w.weekStart.startsWith(ytdKey)).reduce((s,e)=>s+parseFloat(e.amount),0);
+  const avg=weeklyIncome.length>0 ? weeklyIncome.reduce((s,e)=>s+parseFloat(e.amount),0)/weeklyIncome.length : 0;
+
+  document.getElementById('wi-thisWeek').textContent=fmt(thisWeekTotal);
+  document.getElementById('wi-weekLabel').textContent='Week of '+fmtDate(thisWeekStart);
+  document.getElementById('wi-thisMonth').textContent=fmt(thisMonthTotal);
+  document.getElementById('wi-monthLabel').textContent=now.toLocaleString('en-GB',{month:'long',year:'numeric'});
+  document.getElementById('wi-ytd').textContent=fmt(ytdTotal);
+  document.getElementById('wi-ytdLabel').textContent='Jan – '+now.toLocaleString('en-GB',{month:'short',year:'numeric'});
+  document.getElementById('wi-avg').textContent=fmt(avg);
+
+  let visible=filterMonth
+    ? weeklyIncome.filter(w=>w.weekStart.startsWith(filterMonth))
+    : [...weeklyIncome];
+  visible.sort((a,b)=>b.weekStart.localeCompare(a.weekStart));
+  const filteredTotal=visible.reduce((s,e)=>s+parseFloat(e.amount),0);
+
+  const ih=document.getElementById('incomeHighlight');
+  if(weeklyIncome.length>0){
+    ih.style.display='flex';
+    document.getElementById('ihTitle').textContent=filterMonth ? 'Income — '+new Date(filterMonth+'-01').toLocaleString('en-GB',{month:'long',year:'numeric'}) : 'All Weekly Income';
+    document.getElementById('ihValue').textContent=fmt(filteredTotal);
+    document.getElementById('ihSub').textContent=filterMonth ? 'Filtered by month' : 'All time total';
+    document.getElementById('ihCount').textContent=`${visible.length} week${visible.length!==1?'s':''} recorded`;
+  } else ih.style.display='none';
+
+  const tbody=document.getElementById('incomeTableBody');
+  const empty=document.getElementById('incomeEmpty');
+  const footer=document.getElementById('incomeFooter');
+  document.getElementById('wiCount').textContent=`(${visible.length})`;
+
+  if(visible.length===0){ tbody.innerHTML=''; empty.style.display='block'; footer.style.display='none'; }
+  else{
+    empty.style.display='none'; footer.style.display='flex';
+    document.getElementById('wiFootTotal').textContent=fmt(filteredTotal);
+    document.getElementById('wiFootWeeks').textContent=visible.length;
+    tbody.innerHTML=visible.map(e=>`
+      <tr>
+        <td>${fmtDate(e.weekStart)}</td>
+        <td><span class="week-badge">${getISOWeek(e.weekStart)}</span></td>
+        <td class="num" style="color:var(--purple)">£${parseFloat(e.amount).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        <td><span style="font-size:12px;color:var(--ink2)">${esc(e.source||'—')}</span></td>
+        <td class="muted">${esc(e.note||'—')}</td>
+        <td style="text-align:center;white-space:nowrap">
+          <button class="btn btn-outline btn-sm" onclick="editWeeklyIncome('${e.id}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="startDelete('income','${e.id}')">Del</button>
+        </td>
+      </tr>`).join('');
+  }
+  renderIncomeMonthlyBreakdown();
+  renderIncomeMiniBar();
+}
+
+function renderIncomeMonthlyBreakdown(){
+  const months=[...new Set(weeklyIncome.map(w=>w.weekStart.slice(0,7)))].sort().reverse();
+  const tbody=document.getElementById('incomeMonthlyBody');
+  const empty=document.getElementById('incomeMonthlyEmpty');
+  if(!months.length){ tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  tbody.innerHTML=months.map(mo=>{
+    const[yr,m]=mo.split('-').map(Number);
+    const label=new Date(yr,m-1,1).toLocaleString('en-GB',{month:'long',year:'numeric'});
+    const entries=weeklyIncome.filter(w=>w.weekStart.startsWith(mo));
+    const total=entries.reduce((s,e)=>s+parseFloat(e.amount),0);
+    const weekAvg=entries.length>0?total/entries.length:0;
+    const best=entries.length>0?Math.max(...entries.map(e=>parseFloat(e.amount))):0;
+    return `<tr>
+      <td><strong>${label}</strong></td>
+      <td style="color:var(--ink3)">${entries.length} week${entries.length!==1?'s':''}</td>
+      <td class="num" style="color:var(--purple)">£${total.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td class="num">£${weekAvg.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td class="num" style="color:var(--green)">£${best.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderIncomeMiniBar(){
+  const now=new Date(); const bars=[];
+  for(let i=7;i>=0;i--){
+    const d=new Date(now);
+    d.setDate(d.getDate()-i*7);
+    const wStart=toMonday(d.toISOString().split('T')[0]);
+    const entry=weeklyIncome.find(w=>w.weekStart===wStart);
+    bars.push({label:'W'+(8-i),total:entry?parseFloat(entry.amount):0,wStart});
+  }
+  const max=Math.max(...bars.map(b=>b.total),1);
+  const colors=['#9f7aea','#b794f4','#c4b5fd','#a78bfa','#8b5cf6','#7c3aed','#6b21a8','#9f7aea'];
+  document.getElementById('incomeMiniBar').innerHTML=bars.map((b,i)=>`
+    <div class="mini-bar-wrap">
+      <div class="mini-bar" style="height:${Math.round(b.total/max*100)}%;background:${colors[i]};min-height:${b.total>0?3:0}px" title="Week of ${fmtDate(b.wStart)}: £${b.total.toFixed(2)}"></div>
+      <div class="mini-bar-label">${b.label}</div>
+    </div>`).join('');
+}
+
+function exportIncomeCSV(){
+  if(!weeklyIncome.length){ showToast('⚠ No income entries to export.'); return; }
+  dlCSV([['Week Starting','ISO Week','Amount','Source','Note'],...weeklyIncome.map(e=>[e.weekStart,getISOWeek(e.weekStart),e.amount,e.source,`"${(e.note||'').replace(/"/g,'""')}"`])],'weekly-income.csv');
+}
+
 /* ─── SALARY MODAL ─── */
 function openSalaryModal(){
   const vm=document.getElementById('viewMonth').value;
@@ -723,9 +1010,10 @@ function startDelete(type,id){ deleteTarget={type,id}; document.getElementById('
 function closeDeleteModal(){ deleteTarget=null; document.getElementById('deleteModal').classList.remove('open'); }
 async function confirmDelete(){
   if(!deleteTarget) return;
-  if(deleteTarget.type==='sale')    { sales=sales.filter(e=>e.id!==deleteTarget.id);       lsSave(KEYS.sales,sales);    renderSalesSection(); }
-  if(deleteTarget.type==='salary')  { salaries=salaries.filter(e=>e.id!==deleteTarget.id); lsSave(KEYS.salaries,salaries); renderSalesSection(); }
-  if(deleteTarget.type==='invoice') { invoices=invoices.filter(e=>e.id!==deleteTarget.id); lsSave(KEYS.invoices,invoices); renderInvoices(); renderInvSummary(); }
+  if(deleteTarget.type==='sale')    { sales=sales.filter(e=>e.id!==deleteTarget.id);               lsSave(KEYS.sales,sales);        renderSalesSection(); }
+  if(deleteTarget.type==='salary')  { salaries=salaries.filter(e=>e.id!==deleteTarget.id);         lsSave(KEYS.salaries,salaries);  renderSalesSection(); }
+  if(deleteTarget.type==='invoice') { invoices=invoices.filter(e=>e.id!==deleteTarget.id);         lsSave(KEYS.invoices,invoices);  renderInvoices(); renderInvSummary(); }
+  if(deleteTarget.type==='income')  { weeklyIncome=weeklyIncome.filter(e=>e.id!==deleteTarget.id); lsSave(KEYS.income,weeklyIncome); renderIncomeSection(); }
   closeDeleteModal(); showToast('🗑 Deleted.');
   await pushToSheets();
 }
@@ -754,11 +1042,13 @@ function showToast(m){ const t=document.getElementById('toast'); t.textContent=m
 /* ─── INIT ─── */
 (function(){
   document.getElementById('saleDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('wiDate').value=getThisWeekStart();
   const n=new Date();
   document.getElementById('viewMonth').value=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
   autoMarkOverdue();
   renderSalesSection();
   renderInvSummary();
+  renderIncomeSection();
 })();
 </script>
 </body>
